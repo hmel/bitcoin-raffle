@@ -1,0 +1,24 @@
+{
+  "name": "bitcoin-raffle",
+  "version": "0.1.0",
+  "description": "Create a raffle on the Bitcoin blockchain",
+  "main": "raffle.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "/home/face/projects/bitraffle/"
+  },
+  "keywords": [
+    "Bitcoin",
+    "raffle"
+  ],
+  "author": "Nikolay Mitev",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^1.5.2",
+    "big-integer": "^1.6.15",
+    "request": "^2.72.0"
+  }
+}
