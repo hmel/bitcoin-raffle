@@ -15,6 +15,16 @@ var transactions = [];
 //each address will be added 1 time for each ticket associated with it
 var raffleTickets = [];
 
+//set to true to get debug output. TODO make command line flag
+var verbose = false;
+
+//only logs in verbose mode
+function log() {
+    if (verbose) {
+        console.log.apply(this, arguments);
+    }
+}
+
 
 function getTransaction(txhash, callback) {
     req('https://api.blockcypher.com/v1/btc/main/txs/' + txhash.tx_hash, function(err, response, body) {
@@ -35,19 +45,20 @@ function getTransaction(txhash, callback) {
 }
 
 
-function processTransaction(tx) {
-    //console.log(tx);
-    //console.log("addresses");
-    //console.log(tx.addresses);
-    //console.log("input addresses");
-    //for (var x of tx.inputs) {
-    //console.log(x.addresses);
-//}
-    //console.log("output addresses");
-    //for (var x of tx.outputs) {
-    //console.log(x.addresses);
-//}
-    //console.log("\n====");
+function processTransaction(tx, winningBlockHeight) {
+    log(tx);
+    log("Transaction at block height " + tx.block_height);
+    
+    //ignore transactions made after winning block
+    if (tx.block_height > winningBlockHeight) {
+        log("Ignoring transaction made after winning block");
+        return;
+    }
+
+    //we go through all outputs and if any of the outputs is to our raffle
+    //address we take the amount and calculate the number of tickets this entry gets.
+    //the first input address is used to identify the sender and he must prove
+    //ownership if he wins
 
     for (var out of tx.outputs) {
         assert(out.addresses.length === 1, "Multiple output addresses?!?");
@@ -63,28 +74,27 @@ function processTransaction(tx) {
 }
 
 function getWinner(raffleAddress, blockHeight, ticketPriceSatoshi) {
-    req('https://api.blockcypher.com/v1/btc/main/addrs/' + raffleAddress + "?unspentOnly=true&confirmations=1", function(err, response, body) {
+
+    req('https://api.blockcypher.com/v1/btc/main/addrs/' + raffleAddress + "?includeConfidence=false", function(err, response, body) {
         if (!err) {
             var addrInfo = JSON.parse(body);
             if (addrInfo.error) {
                 console.log(addrInfo.error);
                 process.exit(1);
             }
-            async.forEach(addrInfo.txrefs, getTransaction, function(err) {
+            //async.forEach(addrInfo.txrefs, getTransaction, function(err) {
+            //We're hitting blockcypher call limits when doing parallel, so do it in series
+            async.eachSeries(addrInfo.txrefs, getTransaction, function(err) {
                 if (err) {
                     console.log("Error processing transactions");
                     process.exit(1);
                 } else {
-                    //console.log("Transactions fetched!");
-
                     for (var tx of transactions) {
-                        processTransaction(tx);
+                        processTransaction(tx, winningBlockHeight);
                     }
                     
                     raffleTickets.sort();
-                    //console.log("===raffle tickets===");
-                    //console.log(raffleTickets);
-                    
+
                     req('https://api.blockcypher.com/v1/btc/main/blocks/' + winningBlockHeight + '?limit=0', function(err, response, body) {
                         if (!err) {
                             var block = JSON.parse(body);
