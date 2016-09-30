@@ -15,7 +15,7 @@ future serves as a provable source of randomness.
 
 How to run:
 
-nodejs raffle.js node raffle.js <bitcoin-address> <block-height> <satoshis-per-ticket>
+nodejs raffle.js `<bitcoin-address> <block-height> <satoshis-per-ticket>`
 
 You'll need nodejs and npm to run. This version uses blockcypher.com API to get blockchain information.
 
